@@ -43,14 +43,15 @@ class NationBuilder::Client
       header: {
         'Accept' => 'application/json',
         'Content-Type' => 'application/json'
+      },
+      query: {
+        access_token: @api_key
       }
     }
 
     if method.http_method == :get
       request_args[:query] = nonmethod_args
-      request_args[:query][:access_token] = @api_key
     else
-      nonmethod_args[:access_token] = @api_key
       request_args[:body] = JSON(nonmethod_args)
     end
 
@@ -61,11 +62,17 @@ class NationBuilder::Client
   class ServerResponseError < StandardError; end
 
   def parse_response_body(response)
+    # todo I don't understand where the errors go. There should be a body with some error info in which case I can remove all this crap
     success = response.code.to_s.start_with?('2')
 
-    if response.header['Content-Type'].first != 'application/json'
-      return {} if success
-      raise ServerResponseError.new("Non-JSON content-type for server response: #{response.body}")
+    if !success
+      error = {
+        error: {
+          code: response.code,
+          reason: response.reason
+        }
+      }
+      return error
     end
 
     body = response.body.strip
