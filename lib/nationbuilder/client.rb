@@ -55,30 +55,10 @@ class NationBuilder::Client
       request_args[:body] = JSON(nonmethod_args)
     end
 
-    response = HTTPClient.send(method.http_method, url, request_args)
-    return parse_response_body(response)
+    HTTPClient.send(method.http_method, url, request_args)
   end
 
   class ServerResponseError < StandardError; end
-
-  def parse_response_body(response)
-    # todo I don't understand where the errors go. There should be a body with some error info in which case I can remove all this crap
-    success = response.code.to_s.start_with?('2')
-
-    if !success
-      error = {
-        error: {
-          code: response.code,
-          reason: response.reason
-        }
-      }
-      return error
-    end
-
-    body = response.body.strip
-    return {} if body.length == 0
-    return JSON.parse(body)
-  end
 
   def print_all_descriptions
     endpoints.each do |endpoint_name|
